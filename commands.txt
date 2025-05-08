@@ -1,0 +1,24 @@
+help
+mkdir /testdir
+ls /
+ls /testdir
+mkdir /testdir/subdir
+ls /testdir
+copyfrom test_file.txt /testfile.txt
+ls /
+append /testfile.txt 100
+ls /
+copyto /testfile.txt test_copied.txt
+link /testfile.txt /testlink
+ls /
+truncate /testfile.txt 10
+ls /
+usage
+rm /testlink
+ls /
+rmdir /testdir
+rmdir /testdir/subdir
+ls /testdir
+rmdir /testdir
+ls /
+exit
