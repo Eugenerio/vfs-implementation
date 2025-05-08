@@ -5,22 +5,46 @@
 #include <filesystem>
 #include <iomanip>
 
+// ANSI color codes for better UI
+#define COLOR_RESET   "\033[0m"
+#define COLOR_RED     "\033[31m"
+#define COLOR_GREEN   "\033[32m"
+#define COLOR_YELLOW  "\033[33m"
+#define COLOR_BLUE    "\033[34m"
+#define COLOR_CYAN    "\033[36m"
+#define COLOR_BOLD    "\033[1m"
+
 // Helper function to print usage information
 void print_usage() {
-    std::cout << "Available commands:\n";
-    std::cout << "  mkdir <path> - Create a directory\n";
-    std::cout << "  rmdir <path> - Remove a directory\n";
-    std::cout << "  copyto <virt_path> <sys_path> - Copy a file from virtual disk to system\n";
-    std::cout << "  copyfrom <sys_path> <virt_path> - Copy a file from system to virtual disk\n";
-    std::cout << "  ls <path> - List directory contents\n";
-    std::cout << "  link <target> <link_path> - Create a hard link\n";
-    std::cout << "  rm <path> - Remove a file or link\n";
-    std::cout << "  append <path> <bytes> - Add bytes to a file\n";
-    std::cout << "  truncate <path> <bytes> - Truncate a file by bytes\n";
-    std::cout << "  usage - Show disk usage\n";
-    std::cout << "  clear - Clear the screen\n";
-    std::cout << "  help - Show this help\n";
-    std::cout << "  exit - Exit the program\n";
+    std::cout << COLOR_BOLD << COLOR_CYAN << "Available commands:" << COLOR_RESET << "\n";
+    std::cout << COLOR_YELLOW << "  mkdir <path>" << COLOR_RESET << "      - Create a directory\n";
+    std::cout << COLOR_YELLOW << "  rmdir <path>" << COLOR_RESET << "      - Remove a directory\n";
+    std::cout << COLOR_YELLOW << "  copyto <virt_path> <sys_path>" << COLOR_RESET << " - Copy a file from virtual disk to system\n";
+    std::cout << COLOR_YELLOW << "  copyfrom <sys_path> <virt_path>" << COLOR_RESET << " - Copy a file from system to virtual disk\n";
+    std::cout << COLOR_YELLOW << "  ls <path>" << COLOR_RESET << "         - List directory contents\n";
+    std::cout << COLOR_YELLOW << "  link <target> <link_path>" << COLOR_RESET << " - Create a hard link\n";
+    std::cout << COLOR_YELLOW << "  rm <path>" << COLOR_RESET << "          - Remove a file or link\n";
+    std::cout << COLOR_YELLOW << "  append <path> <bytes>" << COLOR_RESET << " - Add bytes to a file\n";
+    std::cout << COLOR_YELLOW << "  truncate <path> <bytes>" << COLOR_RESET << " - Truncate a file by bytes\n";
+    std::cout << COLOR_YELLOW << "  usage" << COLOR_RESET << "              - Show disk usage\n";
+    std::cout << COLOR_YELLOW << "  clear" << COLOR_RESET << "              - Clear the screen\n";
+    std::cout << COLOR_YELLOW << "  help" << COLOR_RESET << "               - Show this help\n";
+    std::cout << COLOR_YELLOW << "  exit" << COLOR_RESET << "               - Exit the program\n";
+}
+
+// Helper function to print error messages
+void print_error(const std::string& msg) {
+    std::cout << COLOR_RED << "Error: " << msg << COLOR_RESET << "\n";
+}
+
+// Helper function to print success messages
+void print_success(const std::string& msg) {
+    std::cout << COLOR_GREEN << msg << COLOR_RESET << "\n";
+}
+
+// Helper function to print info messages
+void print_info(const std::string& msg) {
+    std::cout << COLOR_CYAN << msg << COLOR_RESET << "\n";
 }
 
 // Helper function to parse and execute commands
@@ -42,67 +66,77 @@ bool execute_command(const std::string& input, FileSystem& fs) {
         iss >> path;
         
         if (path.empty()) {
-            std::cout << "Error: Missing path parameter\n";
+            print_error("Missing path parameter");
             return true;
         }
         
-        // Add debug info
-        std::cout << "Debug: Trying to create directory '" << path << "'\n";
+        print_info("Trying to create directory '" + path + "'");
         
         if (fs.create_directory(path)) {
-            std::cout << "Directory created successfully\n";
+            print_success("Directory created successfully");
         } else {
-            std::cout << "Error: Failed to create directory\n";
+            print_error("Failed to create directory");
         }
     } else if (cmd == "rmdir") {
         std::string path;
         iss >> path;
         
         if (path.empty()) {
-            std::cout << "Error: Missing path parameter\n";
+            print_error("Missing path parameter");
+            return true;
+        }
+        
+        std::cout << COLOR_YELLOW << "Are you sure you want to remove directory '" << path << "'? (y/n): " << COLOR_RESET;
+        char confirm;
+        std::cin >> confirm;
+        std::cin.ignore();
+        
+        if (confirm != 'y' && confirm != 'Y') {
+            print_info("Cancelled");
             return true;
         }
         
         if (fs.remove_directory(path)) {
-            std::cout << "Directory removed successfully\n";
+            print_success("Directory removed successfully");
         } else {
-            std::cout << "Error: Failed to remove directory\n";
+            print_error("Failed to remove directory");
         }
     } else if (cmd == "copyto") {
         std::string virt_path, sys_path;
         iss >> virt_path >> sys_path;
         
         if (virt_path.empty() || sys_path.empty()) {
-            std::cout << "Error: Missing parameters\n";
+            print_error("Missing parameters");
             return true;
         }
         
+        print_info("Copying from virtual disk to system...");
+        
         if (fs.copy_to_system(virt_path, sys_path)) {
-            std::cout << "File copied successfully\n";
+            print_success("File copied successfully");
         } else {
-            std::cout << "Error: Failed to copy file\n";
+            print_error("Failed to copy file");
         }
     } else if (cmd == "copyfrom") {
         std::string sys_path, virt_path;
         iss >> sys_path >> virt_path;
         
         if (sys_path.empty() || virt_path.empty()) {
-            std::cout << "Error: Missing parameters\n";
+            print_error("Missing parameters");
             return true;
         }
         
-        // Add debug info
-        std::cout << "Debug: Trying to copy from '" << sys_path << "' to '" << virt_path << "'\n";
+        print_info("Trying to copy from '" + sys_path + "' to '" + virt_path + "'");
         
         if (!std::filesystem::exists(sys_path)) {
-            std::cout << "Error: System file does not exist\n";
+            print_error("System file does not exist");
             return true;
         }
         
         if (fs.copy_from_system(sys_path, virt_path)) {
-            std::cout << "File copied successfully\n";
+            print_success("File copied successfully");
         } else {
-            std::cout << "Error: Failed to copy file\n";
+            print_error("Failed to copy file");
         }
     } else if (cmd == "ls") {
         std::string path;
@@ -115,11 +149,11 @@ bool execute_command(const std::string& input, FileSystem& fs) {
         auto entries = fs.list_directory(path);
         
         if (entries.empty()) {
-            std::cout << "Directory is empty or does not exist\n";
+            print_info("Directory is empty or does not exist");
         } else {
             uint32_t total_size = 0;
-            std::cout << "Contents of " << path << ":\n";
-            std::cout << std::left << std::setw(30) << "Name" << std::right << std::setw(10) << "Size (B)" << "\n";
+            std::cout << COLOR_BOLD << "Contents of " << path << ":" << COLOR_RESET << "\n";
+            std::cout << COLOR_CYAN << std::left << std::setw(30) << "Name" << std::right << std::setw(10) << "Size (B)" << COLOR_RESET << "\n";
             std::cout << std::string(40, '-') << "\n";
             
             for (const auto& entry : entries) {
@@ -129,35 +163,45 @@ bool execute_command(const std::string& input, FileSystem& fs) {
             }
             
             std::cout << std::string(40, '-') << "\n";
-            std::cout << "Total size: " << total_size << " bytes\n";
+            std::cout << COLOR_CYAN << "Total size: " << total_size << " bytes" << COLOR_RESET << "\n";
         }
     } else if (cmd == "link") {
         std::string target, link_path;
         iss >> target >> link_path;
         
         if (target.empty() || link_path.empty()) {
-            std::cout << "Error: Missing parameters\n";
+            print_error("Missing parameters");
             return true;
         }
         
         if (fs.create_link(target, link_path)) {
-            std::cout << "Link created successfully\n";
+            print_success("Link created successfully");
         } else {
-            std::cout << "Error: Failed to create link\n";
+            print_error("Failed to create link");
         }
     } else if (cmd == "rm") {
         std::string path;
         iss >> path;
         
         if (path.empty()) {
-            std::cout << "Error: Missing path parameter\n";
+            print_error("Missing path parameter");
+            return true;
+        }
+        
+        std::cout << COLOR_YELLOW << "Are you sure you want to remove file/link '" << path << "'? (y/n): " << COLOR_RESET;
+        char confirm;
+        std::cin >> confirm;
+        std::cin.ignore();
+        
+        if (confirm != 'y' && confirm != 'Y') {
+            print_info("Cancelled");
             return true;
         }
         
         if (fs.remove_file(path)) {
-            std::cout << "File removed successfully\n";
+            print_success("File removed successfully");
         } else {
-            std::cout << "Error: Failed to remove file\n";
+            print_error("Failed to remove file");
         }
     } else if (cmd == "append") {
         std::string path;
@@ -165,14 +209,14 @@ bool execute_command(const std::string& input, FileSystem& fs) {
         iss >> path >> bytes;
         
         if (path.empty() || bytes == 0) {
-            std::cout << "Error: Missing or invalid parameters\n";
+            print_error("Missing or invalid parameters");
             return true;
         }
         
         if (fs.append_to_file(path, bytes)) {
-            std::cout << bytes << " bytes appended successfully\n";
+            print_success(std::to_string(bytes) + " bytes appended successfully");
         } else {
-            std::cout << "Error: Failed to append to file\n";
+            print_error("Failed to append to file");
         }
     } else if (cmd == "truncate") {
         std::string path;
@@ -180,29 +224,29 @@ bool execute_command(const std::string& input, FileSystem& fs) {
         iss >> path >> bytes;
         
         if (path.empty() || bytes == 0) {
-            std::cout << "Error: Missing or invalid parameters\n";
+            print_error("Missing or invalid parameters");
             return true;
         }
         
         if (fs.truncate_file(path, bytes)) {
-            std::cout << "File truncated by " << bytes << " bytes successfully\n";
+            print_success("File truncated by " + std::to_string(bytes) + " bytes successfully");
         } else {
-            std::cout << "Error: Failed to truncate file\n";
+            print_error("Failed to truncate file");
         }
     } else if (cmd == "usage") {
         auto usage = fs.get_disk_usage();
         
-        std::cout << "Disk usage:\n";
-        std::cout << "Used: " << usage.first << " blocks (" 
+        std::cout << COLOR_BOLD << "Disk usage:" << COLOR_RESET << "\n";
+        std::cout << COLOR_CYAN << "Used: " << usage.first << " blocks (" 
                   << usage.first * BLOCK_SIZE << " bytes)\n";
         std::cout << "Total: " << usage.second << " blocks (" 
                   << usage.second * BLOCK_SIZE << " bytes)\n";
         std::cout << "Free: " << (usage.second - usage.first) << " blocks (" 
                   << (usage.second - usage.first) * BLOCK_SIZE << " bytes)\n";
         std::cout << "Usage: " << std::fixed << std::setprecision(2)
-                  << (static_cast<double>(usage.first) / usage.second * 100) << "%\n";
+                  << (static_cast<double>(usage.first) / usage.second * 100) << "%" << COLOR_RESET << "\n";
     } else {
-        std::cout << "Unknown command: " << cmd << "\n";
+        std::cout << COLOR_RED << "Unknown command: " << cmd << COLOR_RESET << "\n";
         print_usage();
     }
     
@@ -250,14 +294,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
-    std::cout << "Virtual disk mounted successfully\n";
-    std::cout << "Type 'help' for available commands or 'exit' to quit\n";
+    std::cout << COLOR_GREEN << "Virtual disk mounted successfully" << COLOR_RESET << "\n";
+    std::cout << COLOR_CYAN << "Type 'help' for available commands or 'exit' to quit" << COLOR_RESET << "\n";
     
     std::string input;
     bool running = true;
     
     while (running) {
-        std::cout << "> ";
+        std::cout << COLOR_BOLD << "> " << COLOR_RESET;
         std::getline(std::cin, input);
         
         if (!input.empty()) {
@@ -265,6 +309,6 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    std::cout << "Unmounting disk and exiting...\n";
+    std::cout << COLOR_YELLOW << "Unmounting disk and exiting..." << COLOR_RESET << "\n";
     return 0;
 } 
