@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-#include <filesystem>
+#include <fstream>
 #include <iomanip>
 
 #define COLOR_RESET "\033[0m"
@@ -154,7 +154,8 @@ bool execute_command(const std::string &input, FileSystem &fs)
 
         print_info("Trying to copy from '" + sys_path + "' to '" + virt_path + "'");
 
-        if (!std::filesystem::exists(sys_path))
+        std::ifstream file(sys_path);
+        if (!file.good())
         {
             print_error("System file does not exist");
             return true;
@@ -331,7 +332,8 @@ int main(int argc, char *argv[])
     FileSystem fs(disk_path);
 
     // Check if the disk file exists
-    if (!std::filesystem::exists(disk_path))
+    std::ifstream file(disk_path);
+    if (!file.good())
     {
         std::cout << "Virtual disk file does not exist. Create a new one? (y/n): ";
         char response;
